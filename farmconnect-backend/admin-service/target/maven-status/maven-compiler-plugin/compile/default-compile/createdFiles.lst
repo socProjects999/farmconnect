@@ -1,0 +1,13 @@
+com\farmconnect\adminservice\config\WebConfig.class
+com\farmconnect\adminservice\repository\UserRepository.class
+com\farmconnect\adminservice\model\User$Role.class
+com\farmconnect\adminservice\service\AdminService.class
+com\farmconnect\adminservice\AdminServiceApplication.class
+com\farmconnect\adminservice\repository\OrderRepository.class
+com\farmconnect\adminservice\dto\DashboardStatistics.class
+com\farmconnect\adminservice\model\Order$OrderStatus.class
+com\farmconnect\adminservice\model\User.class
+com\farmconnect\adminservice\controller\AdminController.class
+com\farmconnect\adminservice\repository\ProductRepository.class
+com\farmconnect\adminservice\model\Product.class
+com\farmconnect\adminservice\model\Order.class
