@@ -1,8 +1,0 @@
-com\farmconnect\productservice\config\WebConfig.class
-com\farmconnect\productservice\ProductServiceApplication.class
-com\farmconnect\productservice\dto\ProductResponse.class
-com\farmconnect\productservice\model\Product.class
-com\farmconnect\productservice\service\ProductService.class
-com\farmconnect\productservice\controller\ProductController.class
-com\farmconnect\productservice\repository\ProductRepository.class
-com\farmconnect\productservice\dto\ProductRequest.class
