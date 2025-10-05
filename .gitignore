@@ -1,0 +1,63 @@
+############################
+# Global Git Ignore for FarmConnect
+############################
+
+### Backend (Spring Boot + Maven) ###
+# Maven build output
+target/
+**/target/
+
+# IDE settings
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Logs
+*.log
+
+# Temporary / Backup files
+*.tmp
+*.bak
+*.swp
+*.orig
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Java build artifacts
+*.jar
+*.war
+*.ear
+
+# Environment / Config files
+.env
+**/application-*.yml
+**/application-*.properties
+
+
+############################
+### Frontend (React) ###
+############################
+farmconnect-frontend/node_modules/
+farmconnect-frontend/build/
+farmconnect-frontend/.env.local
+farmconnect-frontend/.env.development.local
+farmconnect-frontend/.env.test.local
+farmconnect-frontend/.env.production.local
+
+
+############################
+### Miscellaneous ###
+############################
+# VS Code
+.vscode/
+
+# Mac & Windows OS junk
+*.DS_Store
+Thumbs.db
+
+# Backup
+*.bak
