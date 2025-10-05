@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import productService from '../../services/productService';
 import { toast } from 'react-toastify';
 import '../../styles/Products.css';
+import ImageUpload from '../common/ImageUpload';
 
 const MyProducts = () => {
   const [products, setProducts] = useState([]);
@@ -182,7 +183,21 @@ const MyProducts = () => {
               </button>
             </div>
 
+            // Find the edit modal section and replace the form with this:
+
             <form onSubmit={handleUpdate} className="product-form">
+              {/* Image Upload Section */}
+              <div className="form-section">
+                <h3 className="section-title">Product Image</h3>
+                <ImageUpload
+                  onImageUploaded={(url) =>
+                    setEditingProduct({ ...editingProduct, imageUrl: url })
+                  }
+                  currentImageUrl={editingProduct.imageUrl}
+                />
+              </div>
+
+              {/* Rest of the form remains the same */}
               <div className="form-group">
                 <label>Product Name</label>
                 <input
@@ -245,17 +260,6 @@ const MyProducts = () => {
                   <option value="Eggs">Eggs</option>
                   <option value="Other">Other</option>
                 </select>
-              </div>
-
-              <div className="form-group">
-                <label>Image URL</label>
-                <input
-                  type="url"
-                  name="imageUrl"
-                  value={editingProduct.imageUrl || ''}
-                  onChange={handleChange}
-                  placeholder="https://example.com/image.jpg"
-                />
               </div>
 
               <div className="form-group checkbox-group">

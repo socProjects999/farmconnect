@@ -14,7 +14,7 @@
 }
 
 .admin-table-header p {
-  color: #40916c;
+  color: hsl(120, 67%, 42%);
   font-size: 1.1rem;
 }
 
@@ -34,7 +34,7 @@
 
 .admin-search:focus {
   outline: none;
-  border-color: #52b788;
+  border-color: hsl(120, 67%, 42%);
 }
 
 .admin-role-filters {
@@ -45,7 +45,7 @@
 
 .admin-filter-button {
   padding: 0.5rem 1rem;
-  border: 2px solid #52b788;
+  border: 2px solid hsl(120, 67%, 42%);
   background: white;
   color: #2d6a4f;
   border-radius: 5px;
@@ -59,7 +59,7 @@
 }
 
 .admin-filter-button.active {
-  background-color: #52b788;
+  background-color: hsl(120, 67%, 42%);
   color: white;
 }
 
