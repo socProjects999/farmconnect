@@ -3,10 +3,11 @@
 }
 
 .hero-section {
-  background: linear-gradient(135deg, #2d6a4f 0%, #52b788 100%);
+  background: linear-gradient(135deg, #046d00 0%, hsl(120, 86%, 29%) 100%);
   color: white;
   padding: 5rem 2rem;
   text-align: center;
+  margin-top: -100px;
 }
 
 .hero-content {
@@ -48,8 +49,8 @@
 }
 
 .hero-button.primary {
-  background-color: #1b4332;
-  color: white;
+  background-color: #ebb400;
+  color: rgb(2, 63, 0);
 }
 
 .hero-button.secondary {
