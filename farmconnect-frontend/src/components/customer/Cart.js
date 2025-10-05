@@ -134,7 +134,14 @@ const Cart = () => {
             <div key={item.productId} className="cart-item">
               <div className="cart-item-image">
                 {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.productName} />
+                  <img 
+                    src={item.imageUrl} 
+                    alt={item.productName}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = '<div class="cart-item-placeholder">🌾</div>';
+                    }}
+                  />
                 ) : (
                   <div className="cart-item-placeholder">🌾</div>
                 )}

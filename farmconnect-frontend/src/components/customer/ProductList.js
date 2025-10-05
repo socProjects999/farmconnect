@@ -143,7 +143,21 @@ const ProductList = () => {
             <div key={product.productId} className="product-card">
               <div className="product-image">
                 {product.imageUrl ? (
-                  <img src={product.imageUrl} alt={product.productName} />
+                  <img 
+                    src={product.imageUrl} 
+                    alt={product.productName}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = `
+                        <div class="product-image-placeholder">
+                          ${product.category === 'Vegetables' ? '🥬' :
+                            product.category === 'Fruits' ? '🍎' :
+                            product.category === 'Dairy' ? '🥛' :
+                            product.category === 'Eggs' ? '🥚' : '🌾'}
+                        </div>
+                      `;
+                    }}
+                  />
                 ) : (
                   <div className="product-image-placeholder">
                     {product.category === 'Vegetables' && '🥬'}
