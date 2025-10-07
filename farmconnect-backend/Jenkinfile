@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'MAVEN_HOME'  // Make sure you’ve set this tool name in Jenkins → Global Tool Configuration
+        jdk 'JAVA_HOME'     // Also configure JDK name here
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Cloning repository...'
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building all microservices...'
+                sh 'mvn -f farmconnect-backend/pom.xml clean install -DskipTests'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                sh 'mvn -f farmconnect-backend/pom.xml test'
+            }
+        }
+
+        stage('Package') {
+            steps {
+                echo 'Packaging all services...'
+                sh 'mvn -f farmconnect-backend/pom.xml package'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying to DockerHub or local environment (you can customize this)'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Build completed successfully!'
+        }
+        failure {
+            echo '❌ Build failed!'
+        }
+    }
+}
