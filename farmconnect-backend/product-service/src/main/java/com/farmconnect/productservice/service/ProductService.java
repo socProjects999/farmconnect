@@ -1,5 +1,6 @@
 package com.farmconnect.productservice.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import com.farmconnect.productservice.dto.ProductRequest;
 import com.farmconnect.productservice.dto.ProductResponse;
 import com.farmconnect.productservice.model.Product;
@@ -16,6 +17,38 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private FileStorageService fileStorageService;
+
+    public ProductResponse updateProductImage(Long productId, String imageUrl) {
+    Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new RuntimeException("Product not found!"));
+    
+    // Delete old image if exists
+    if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+        String oldFileName = extractFileNameFromUrl(product.getImageUrl());
+        if (oldFileName != null) {
+            fileStorageService.deleteFile(oldFileName);
+        }
+    }
+    
+        product.setImageUrl(imageUrl);
+        Product updatedProduct = productRepository.save(product);
+        return new ProductResponse(updatedProduct);
+    }
+
+    // Helper method to extract filename from URL
+    private String extractFileNameFromUrl(String url) {
+        if (url == null || url.isEmpty()) {
+            return null;
+        }
+        int lastSlashIndex = url.lastIndexOf('/');
+        if (lastSlashIndex != -1 && lastSlashIndex < url.length() - 1) {
+            return url.substring(lastSlashIndex + 1);
+        }
+        return null;
+    }
+    
     public ProductResponse createProduct(ProductRequest productRequest) {
         Product product = new Product();
         product.setFarmerId(productRequest.getFarmerId());

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/Home.css';
+import header_img from '../../assests/header_img.png';
 
 const Home = () => {
   const { user } = useAuth();
@@ -14,6 +15,10 @@ const Home = () => {
           <p className="hero-subtitle">
             Connecting farmers directly with customers for fresh, quality produce
           </p>
+
+          <div className="header-image">
+            <img src={header_img} alt="header_img" />
+          </div>
           {!user ? (
             <div className="hero-buttons">
               <Link to="/signup" className="hero-button primary">
