@@ -26,7 +26,7 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OrderStatus status = OrderStatus.PENDING;
+    private OrderStatus status;
 
     @Column(name = "order_date", nullable = false, updatable = false)
     private LocalDateTime orderDate;
@@ -44,9 +44,10 @@ public class Order {
     public Order() {
         this.orderDate = LocalDateTime.now();
         this.status = OrderStatus.PENDING;
+        this.totalAmount = BigDecimal.ZERO;
     }
 
-    // Getters and Setters
+    // Getters and setters
     public Long getOrderId() {
         return orderId;
     }
@@ -116,18 +117,29 @@ public class Order {
     }
 
     public void setOrderItems(List<OrderItem> orderItems) {
-        this.orderItems = orderItems;
+        this.orderItems.clear();
+        if (orderItems != null) {
+            orderItems.forEach(this::addOrderItem);
+        }
     }
 
     // Helper methods
     public void addOrderItem(OrderItem orderItem) {
         orderItems.add(orderItem);
         orderItem.setOrder(this);
+        recalculateTotal();
     }
 
     public void removeOrderItem(OrderItem orderItem) {
         orderItems.remove(orderItem);
         orderItem.setOrder(null);
+        recalculateTotal();
+    }
+
+    private void recalculateTotal() {
+        this.totalAmount = orderItems.stream()
+                .map(OrderItem::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     // Enum for Order Status

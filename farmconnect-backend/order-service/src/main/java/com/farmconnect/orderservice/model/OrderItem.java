@@ -31,13 +31,7 @@ public class OrderItem {
     private BigDecimal subtotal;
 
     // Constructors
-    public OrderItem() {}
-
-    public OrderItem(Long productId, Integer quantity, BigDecimal priceAtPurchase) {
-        this.productId = productId;
-        this.quantity = quantity;
-        this.priceAtPurchase = priceAtPurchase;
-        this.subtotal = priceAtPurchase.multiply(BigDecimal.valueOf(quantity));
+    public OrderItem() {
     }
 
     // Getters and Setters
@@ -87,10 +81,5 @@ public class OrderItem {
 
     public void setSubtotal(BigDecimal subtotal) {
         this.subtotal = subtotal;
-    }
-
-    // Calculate subtotal
-    public void calculateSubtotal() {
-        this.subtotal = this.priceAtPurchase.multiply(BigDecimal.valueOf(this.quantity));
     }
 }

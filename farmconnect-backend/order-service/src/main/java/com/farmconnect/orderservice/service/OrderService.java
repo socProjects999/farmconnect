@@ -1,5 +1,6 @@
 package com.farmconnect.orderservice.service;
 
+import com.farmconnect.orderservice.dto.OrderItemDTO;
 import com.farmconnect.orderservice.dto.OrderRequest;
 import com.farmconnect.orderservice.dto.OrderResponse;
 import com.farmconnect.orderservice.model.Delivery;
@@ -26,6 +27,20 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
+        // Validate order request
+        if (orderRequest.getCustomerId() == null) {
+            throw new RuntimeException("Customer ID cannot be null");
+        }
+        if (orderRequest.getFarmerId() == null) {
+            throw new RuntimeException("Farmer ID cannot be null");
+        }
+        if (orderRequest.getDeliveryAddress() == null || orderRequest.getDeliveryAddress().trim().isEmpty()) {
+            throw new RuntimeException("Delivery address cannot be empty");
+        }
+        if (orderRequest.getOrderItems() == null || orderRequest.getOrderItems().isEmpty()) {
+            throw new RuntimeException("Order must contain at least one item");
+        }
+
         // Create order
         Order order = new Order();
         order.setCustomerId(orderRequest.getCustomerId());
@@ -33,22 +48,42 @@ public class OrderService {
         order.setDeliveryAddress(orderRequest.getDeliveryAddress());
         order.setCustomerNotes(orderRequest.getCustomerNotes());
 
-        // Add order items
+        // Add order items and calculate total
         BigDecimal totalAmount = BigDecimal.ZERO;
-        for (var itemDTO : orderRequest.getOrderItems()) {
-            OrderItem orderItem = new OrderItem(
-                    itemDTO.getProductId(),
-                    itemDTO.getQuantity(),
-                    itemDTO.getPriceAtPurchase()
-            );
-            orderItem.calculateSubtotal();
+
+        for (OrderItemDTO itemDTO : orderRequest.getOrderItems()) {
+            // Validate each item
+            if (itemDTO.getProductId() == null) {
+                throw new RuntimeException("Product ID cannot be null");
+            }
+            if (itemDTO.getQuantity() == null || itemDTO.getQuantity() <= 0) {
+                throw new RuntimeException("Quantity must be greater than 0");
+            }
+            if (itemDTO.getPriceAtPurchase() == null || itemDTO.getPriceAtPurchase().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new RuntimeException("Price must be greater than 0");
+            }
+
+            // Create order item
+            OrderItem orderItem = new OrderItem();
+            orderItem.setProductId(itemDTO.getProductId());
+            orderItem.setQuantity(itemDTO.getQuantity());
+            orderItem.setPriceAtPurchase(itemDTO.getPriceAtPurchase());
+
+            // Calculate subtotal manually
+            BigDecimal subtotal = itemDTO.getPriceAtPurchase()
+                    .multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
+            orderItem.setSubtotal(subtotal);
+
+            // Add to total
+            totalAmount = totalAmount.add(subtotal);
+
+            // Add item to order (this sets the bidirectional relationship)
             order.addOrderItem(orderItem);
-            totalAmount = totalAmount.add(orderItem.getSubtotal());
         }
 
         order.setTotalAmount(totalAmount);
 
-        // Save order
+        // Save order (cascade will save order items)
         Order savedOrder = orderRepository.save(order);
 
         // Create delivery record
@@ -66,7 +101,7 @@ public class OrderService {
 
     public OrderResponse getOrderById(Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found!"));
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
         return new OrderResponse(order);
     }
 
@@ -82,13 +117,14 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public OrderResponse updateOrderStatus(Long orderId, Order.OrderStatus status) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found!"));
-        
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
+
         order.setStatus(status);
         Order updatedOrder = orderRepository.save(order);
-        
+
         return new OrderResponse(updatedOrder);
     }
 
@@ -101,13 +137,13 @@ public class OrderService {
     @Transactional
     public void cancelOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found!"));
-        
-        if (order.getStatus() == Order.OrderStatus.DELIVERED || 
-            order.getStatus() == Order.OrderStatus.SHIPPED) {
-            throw new RuntimeException("Cannot cancel order that is already shipped or delivered!");
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
+
+        if (order.getStatus() == Order.OrderStatus.DELIVERED ||
+                order.getStatus() == Order.OrderStatus.SHIPPED) {
+            throw new RuntimeException("Cannot cancel order that is already shipped or delivered");
         }
-        
+
         order.setStatus(Order.OrderStatus.CANCELLED);
         orderRepository.save(order);
     }
