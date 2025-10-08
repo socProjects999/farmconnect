@@ -1,29 +1,11 @@
-# Build stage
-FROM maven:3.9.5-eclipse-temurin-17 AS build
-WORKDIR /build
-
-# Copy Maven settings to use mirror
-COPY docker-maven-settings.xml /root/.m2/settings.xml
-
-# Copy parent POM first
-COPY pom.xml ./pom.xml
-
-# Copy this service's pom and source
-COPY order-service/pom.xml ./order-service/pom.xml
-COPY order-service/src ./order-service/src
-
-# Build the service
-WORKDIR /build/order-service
-RUN mvn clean package -DskipTests
-
-# Runtime stage
+# Runtime stage - We only need this stage since Jenkins already built the JAR
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-# Copy the JAR from build stage
-COPY --from=build /build/order-service/target/*.jar app.jar
+# Copy the JAR from the target folder (created by the Jenkins Maven build)
+COPY target/*.jar app.jar
 
-EXPOSE 8083
+EXPOSE 8084
 ENV SPRING_PROFILES_ACTIVE=docker
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
