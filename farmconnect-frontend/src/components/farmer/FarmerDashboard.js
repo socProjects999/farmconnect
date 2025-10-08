@@ -19,40 +19,38 @@ const FarmerDashboard = () => {
   const { user } = useAuth();
 
   useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user || !user.userId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const token = localStorage.getItem('token');
+        const products = await productService.getProductsByFarmer(user.userId);
+        const orders = await orderService.getOrdersByFarmer(user.userId, token);
+
+        const pendingOrders = orders.filter((o) => o.status === 'PENDING').length;
+        const totalRevenue = orders
+          .filter((o) => o.status === 'DELIVERED')
+          .reduce((sum, o) => sum + o.totalAmount, 0);
+
+        setStats({
+          totalProducts: products.length,
+          totalOrders: orders.length,
+          pendingOrders,
+          totalRevenue,
+        });
+
+        setRecentOrders(orders.slice(0, 5));
+      } catch (error) {
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-
-      // Fetch products
-      const products = await productService.getProductsByFarmer(user.userId);
-
-      // Fetch orders
-      const orders = await orderService.getOrdersByFarmer(user.userId, token);
-
-      // Calculate stats
-      const pendingOrders = orders.filter((o) => o.status === 'PENDING').length;
-      const totalRevenue = orders
-        .filter((o) => o.status === 'DELIVERED')
-        .reduce((sum, o) => sum + o.totalAmount, 0);
-
-      setStats({
-        totalProducts: products.length,
-        totalOrders: orders.length,
-        pendingOrders,
-        totalRevenue,
-      });
-
-      // Get recent 5 orders
-      setRecentOrders(orders.slice(0, 5));
-    } catch (error) {
-      toast.error('Failed to load dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user]);
 
   const getStatusColor = (status) => {
     const colors = {

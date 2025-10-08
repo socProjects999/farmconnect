@@ -12,20 +12,24 @@ const MyOrders = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    const fetchOrders = async () => {
+      if (!user || !user.userId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const token = localStorage.getItem('token');
+        const data = await orderService.getOrdersByCustomer(user.userId, token);
+        setOrders(data);
+      } catch (error) {
+        toast.error('Failed to load orders');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchOrders = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const data = await orderService.getOrdersByCustomer(user.userId, token);
-      setOrders(data);
-    } catch (error) {
-      toast.error('Failed to load orders');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchOrders();
+  }, [user]);
 
   const getStatusColor = (status) => {
     const colors = {

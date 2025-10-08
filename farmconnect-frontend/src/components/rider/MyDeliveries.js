@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// 1. Import useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import deliveryService from '../../services/deliveryService';
 import orderService from '../../services/orderService';
@@ -11,16 +12,13 @@ const MyDeliveries = () => {
   const [filter, setFilter] = useState('ALL');
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [orderDetails, setOrderDetails] = useState(null);
-
   const { user } = useAuth();
 
   const statusOptions = ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED'];
 
-  useEffect(() => {
-    fetchDeliveries();
-  }, []);
-
-  const fetchDeliveries = async () => {
+  // 2. Wrap fetchDeliveries in useCallback with `user` as a dependency
+  const fetchDeliveries = useCallback(async () => {
+    if (!user || !user.userId) return;
     try {
       const token = localStorage.getItem('token');
       const data = await deliveryService.getDeliveriesByRider(user.userId, token);
@@ -30,14 +28,19 @@ const MyDeliveries = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  // 3. Add the stable `fetchDeliveries` function to the dependency array
+  useEffect(() => {
+    fetchDeliveries();
+  }, [fetchDeliveries]);
 
   const handleStatusUpdate = async (deliveryId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
       await deliveryService.updateDeliveryStatus(deliveryId, newStatus, token);
       toast.success('Delivery status updated successfully');
-      fetchDeliveries();
+      fetchDeliveries(); // This now calls the memoized function
     } catch (error) {
       toast.error('Failed to update delivery status');
     }
@@ -54,6 +57,7 @@ const MyDeliveries = () => {
     }
   };
 
+  // ... The rest of your component code remains the same
   const getStatusColor = (status) => {
     const colors = {
       PENDING: '#6c757d',

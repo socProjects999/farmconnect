@@ -14,41 +14,45 @@ const RiderDashboard = () => {
   });
   const [recentDeliveries, setRecentDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const { user } = useAuth();
 
   useEffect(() => {
+    // 1. The data fetching logic is now inside the effect
+    const fetchDashboardData = async () => {
+      if (!user || !user.userId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const token = localStorage.getItem('token');
+        const deliveries = await deliveryService.getDeliveriesByRider(
+          user.userId,
+          token
+        );
+
+        const pending = deliveries.filter((d) => d.status === 'ASSIGNED').length;
+        const completed = deliveries.filter((d) => d.status === 'DELIVERED').length;
+        const inProgress = deliveries.filter(
+          (d) => d.status === 'PICKED_UP' || d.status === 'IN_TRANSIT'
+        ).length;
+
+        setStats({
+          totalDeliveries: deliveries.length,
+          pendingDeliveries: pending,
+          completedDeliveries: completed,
+          inProgressDeliveries: inProgress,
+        });
+
+        setRecentDeliveries(deliveries.slice(0, 5));
+      } catch (error) {
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const deliveries = await deliveryService.getDeliveriesByRider(
-        user.userId,
-        token
-      );
-
-      const pending = deliveries.filter((d) => d.status === 'ASSIGNED').length;
-      const completed = deliveries.filter((d) => d.status === 'DELIVERED').length;
-      const inProgress = deliveries.filter(
-        (d) => d.status === 'PICKED_UP' || d.status === 'IN_TRANSIT'
-      ).length;
-
-      setStats({
-        totalDeliveries: deliveries.length,
-        pendingDeliveries: pending,
-        completedDeliveries: completed,
-        inProgressDeliveries: inProgress,
-      });
-
-      setRecentDeliveries(deliveries.slice(0, 5));
-    } catch (error) {
-      toast.error('Failed to load dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user]); // 2. `user` is now correctly listed as a dependency
 
   const getStatusColor = (status) => {
     const colors = {
@@ -70,6 +74,7 @@ const RiderDashboard = () => {
     );
   }
 
+  // ... The rest of your component's JSX remains the same
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">

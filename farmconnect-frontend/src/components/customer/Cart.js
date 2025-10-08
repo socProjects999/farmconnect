@@ -81,10 +81,6 @@ const Cart = () => {
       // Create separate orders for each farmer
       for (const farmerId in groupedCart) {
         const items = groupedCart[farmerId];
-        const totalAmount = items.reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0
-        );
 
         const orderData = {
           customerId: user.userId,
@@ -237,4 +233,3 @@ const Cart = () => {
 };
 
 export default Cart;
-       

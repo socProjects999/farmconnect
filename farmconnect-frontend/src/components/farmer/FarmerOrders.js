@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback  } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import orderService from '../../services/orderService';
 import { toast } from 'react-toastify';
@@ -20,11 +20,8 @@ const FarmerOrders = () => {
     'DELIVERED',
   ];
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+const fetchOrders = useCallback(async () => {
+    if (!user || !user.userId) return;
     try {
       const token = localStorage.getItem('token');
       const data = await orderService.getOrdersByFarmer(user.userId, token);
@@ -34,14 +31,18 @@ const FarmerOrders = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
       await orderService.updateOrderStatus(orderId, newStatus, token);
       toast.success('Order status updated successfully');
-      fetchOrders();
+      fetchOrders(); 
     } catch (error) {
       toast.error('Failed to update order status');
     }

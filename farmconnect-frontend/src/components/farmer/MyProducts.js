@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+// 1. Import useCallback and remove useNavigate
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import productService from '../../services/productService';
 import { toast } from 'react-toastify';
@@ -12,13 +13,9 @@ const MyProducts = () => {
   const [editingProduct, setEditingProduct] = useState(null);
 
   const { user } = useAuth();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
+    if (!user || !user.userId) return;
     try {
       const data = await productService.getProductsByFarmer(user.userId);
       setProducts(data);
@@ -27,7 +24,11 @@ const MyProducts = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleDelete = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this product?')) {
@@ -183,8 +184,7 @@ const MyProducts = () => {
               </button>
             </div>
 
-            // Find the edit modal section and replace the form with this:
-
+            {/* 5. Removed the invalid '//' comment from here */}
             <form onSubmit={handleUpdate} className="product-form">
               {/* Image Upload Section */}
               <div className="form-section">
