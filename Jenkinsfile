@@ -92,44 +92,60 @@ pipeline {
             }
         }
 
-        stage('Build Docker Images') {
-            steps {
-                echo 'Building Docker images...'
-                script {
-                    def services = env.BACKEND_SERVICES.split(',')
-                    services.each { service ->
-                        dir("farmconnect-backend/${service}") {
-                            if (isUnix()) {
-                                sh """
-                                    docker build -t ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER} .
-                                    docker tag ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER} ${DOCKER_HUB_USERNAME}/farmconnect-${service}:latest
-                                """
-                            } else {
-                                bat """
-                                    docker build -t ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER} .
-                                    docker tag ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER} ${DOCKER_HUB_USERNAME}/farmconnect-${service}:latest
-                                """
-                            }
-                        }
+    stage('Build Docker Images') {
+        steps {
+            echo 'Building Docker images...'
+            script {
+                // Build backend services from parent directory context
+                dir('farmconnect-backend') {
+                    if (isUnix()) {
+                        // User Service
+                        sh "docker build -f user-service/Dockerfile -t ${DOCKER_USER}/farmconnect-user-service:${BUILD_NUMBER} ."
+                        sh "docker tag ${DOCKER_USER}/farmconnect-user-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-user-service:latest"
+                        
+                        // Product Service
+                        sh "docker build -f product-service/Dockerfile -t ${DOCKER_USER}/farmconnect-product-service:${BUILD_NUMBER} ."
+                        sh "docker tag ${DOCKER_USER}/farmconnect-product-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-product-service:latest"
+                        
+                        // Order Service
+                        sh "docker build -f order-service/Dockerfile -t ${DOCKER_USER}/farmconnect-order-service:${BUILD_NUMBER} ."
+                        sh "docker tag ${DOCKER_USER}/farmconnect-order-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-order-service:latest"
+                        
+                        // Admin Service
+                        sh "docker build -f admin-service/Dockerfile -t ${DOCKER_USER}/farmconnect-admin-service:${BUILD_NUMBER} ."
+                        sh "docker tag ${DOCKER_USER}/farmconnect-admin-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-admin-service:latest"
+                    } else {
+                        // User Service
+                        bat "docker build -f user-service/Dockerfile -t ${DOCKER_USER}/farmconnect-user-service:${BUILD_NUMBER} ."
+                        bat "docker tag ${DOCKER_USER}/farmconnect-user-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-user-service:latest"
+                        
+                        // Product Service
+                        bat "docker build -f product-service/Dockerfile -t ${DOCKER_USER}/farmconnect-product-service:${BUILD_NUMBER} ."
+                        bat "docker tag ${DOCKER_USER}/farmconnect-product-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-product-service:latest"
+                        
+                        // Order Service
+                        bat "docker build -f order-service/Dockerfile -t ${DOCKER_USER}/farmconnect-order-service:${BUILD_NUMBER} ."
+                        bat "docker tag ${DOCKER_USER}/farmconnect-order-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-order-service:latest"
+                        
+                        // Admin Service
+                        bat "docker build -f admin-service/Dockerfile -t ${DOCKER_USER}/farmconnect-admin-service:${BUILD_NUMBER} ."
+                        bat "docker tag ${DOCKER_USER}/farmconnect-admin-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-admin-service:latest"
                     }
-
-                    // Build frontend
-                    dir('farmconnect-frontend') {
-                        if (isUnix()) {
-                            sh """
-                                docker build -t ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER} .
-                                docker tag ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER} ${DOCKER_HUB_USERNAME}/farmconnect-frontend:latest
-                            """
-                        } else {
-                            bat """
-                                docker build -t ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER} .
-                                docker tag ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER} ${DOCKER_HUB_USERNAME}/farmconnect-frontend:latest
-                            """
-                        }
+                }
+                
+                // Build frontend
+                dir('farmconnect-frontend') {
+                    if (isUnix()) {
+                        sh "docker build -t ${DOCKER_USER}/farmconnect-frontend:${BUILD_NUMBER} ."
+                        sh "docker tag ${DOCKER_USER}/farmconnect-frontend:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-frontend:latest"
+                    } else {
+                        bat "docker build -t ${DOCKER_USER}/farmconnect-frontend:${BUILD_NUMBER} ."
+                        bat "docker tag ${DOCKER_USER}/farmconnect-frontend:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-frontend:latest"
                     }
                 }
             }
         }
+    }
 
         stage('Push to Docker Hub') {
             steps {
