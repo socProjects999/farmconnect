@@ -45,10 +45,7 @@ public class FileUploadController {
             String fileName = fileStorageService.storeFile(file);
 
             // Generate file URL
-            String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/products/")
-                    .path(fileName)
-                    .toUriString();
+            String fileUrl = "/uploads/products/" + fileName;
 
             // Create response
             Map<String, Object> response = new HashMap<>();

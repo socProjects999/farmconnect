@@ -1,6 +1,6 @@
 import axios from '../utils/axios';
 
-const API_URL = 'http://localhost:8081/api/users';
+const API_URL = '/api/users';
 
 const userService = {
   // Get user profile

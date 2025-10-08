@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8083/api/deliveries';
+const API_URL = '/api/deliveries';
 
 const deliveryService = {
   // Get delivery by order ID

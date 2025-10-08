@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8083/api/orders';
+const API_URL = '/api/orders';
 
 const orderService = {
   // Create order

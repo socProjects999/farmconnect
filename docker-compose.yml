@@ -1,0 +1,152 @@
+services:
+  # MySQL Database
+  mysql-db:
+    image: mysql:8.0
+    container_name: farmconnect-mysql
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: farmconnect_db
+      MYSQL_USER: farmconnect
+      MYSQL_PASSWORD: farmconnect123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/farmconnect_db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - farmconnect-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # User Service
+  user-service:
+    build:
+      context: ./farmconnect-backend
+      dockerfile: user-service/Dockerfile
+    container_name: farmconnect-user-service
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/farmconnect_db?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - farmconnect-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Product Service
+  product-service:
+    build:
+      context: ./farmconnect-backend
+      dockerfile: product-service/Dockerfile
+    container_name: farmconnect-product-service
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/farmconnect_db?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+    volumes:
+      - product-uploads:/app/uploads
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - farmconnect-network
+
+  # Order Service
+  order-service:
+    build:
+      context: ./farmconnect-backend
+      dockerfile: order-service/Dockerfile
+    container_name: farmconnect-order-service
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/farmconnect_db?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - farmconnect-network
+
+  # Admin Service
+  admin-service:
+    build:
+      context: ./farmconnect-backend
+      dockerfile: admin-service/Dockerfile
+    container_name: farmconnect-admin-service
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/farmconnect_db?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: rootpassword
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - farmconnect-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./farmconnect-frontend
+      dockerfile: Dockerfile
+    container_name: farmconnect-frontend
+    restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "80:80"
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - admin-service
+    networks:
+      - farmconnect-network
+
+networks:
+  farmconnect-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  product-uploads:
