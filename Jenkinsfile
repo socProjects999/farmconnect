@@ -78,24 +78,19 @@ pipeline {
                 echo 'Building Docker images...'
                 script {
                     dir('farmconnect-backend') {
-                        // User Service
                         bat "docker build -f user-service/Dockerfile -t ${DOCKER_USER}/farmconnect-user-service:${BUILD_NUMBER} ."
                         bat "docker tag ${DOCKER_USER}/farmconnect-user-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-user-service:latest"
 
-                        // Product Service
                         bat "docker build -f product-service/Dockerfile -t ${DOCKER_USER}/farmconnect-product-service:${BUILD_NUMBER} ."
                         bat "docker tag ${DOCKER_USER}/farmconnect-product-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-product-service:latest"
 
-                        // Order Service
                         bat "docker build -f order-service/Dockerfile -t ${DOCKER_USER}/farmconnect-order-service:${BUILD_NUMBER} ."
                         bat "docker tag ${DOCKER_USER}/farmconnect-order-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-order-service:latest"
 
-                        // Admin Service
                         bat "docker build -f admin-service/Dockerfile -t ${DOCKER_USER}/farmconnect-admin-service:${BUILD_NUMBER} ."
                         bat "docker tag ${DOCKER_USER}/farmconnect-admin-service:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-admin-service:latest"
                     }
 
-                    // Frontend
                     dir('farmconnect-frontend') {
                         bat "docker build -t ${DOCKER_USER}/farmconnect-frontend:${BUILD_NUMBER} ."
                         bat "docker tag ${DOCKER_USER}/farmconnect-frontend:${BUILD_NUMBER} ${DOCKER_USER}/farmconnect-frontend:latest"
@@ -109,39 +104,44 @@ pipeline {
                 echo 'Pushing images to Docker Hub...'
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_TOKEN')]) {
-                        // Log in securely using the access token
                         bat """
                             echo Logging in to Docker Hub...
                             echo %DOCKER_HUB_TOKEN% | docker login -u %DOCKER_HUB_USERNAME% --password-stdin
                         """
 
                         def services = env.BACKEND_SERVICES.split(',')
-                    services.each { service ->
+                        services.each { service ->
+                            bat """
+                                docker push %DOCKER_HUB_USERNAME%/farmconnect-${service}:${BUILD_NUMBER}
+                                docker push %DOCKER_HUB_USERNAME%/farmconnect-${service}:latest
+                            """
+                        }
+
                         bat """
-                            docker push %DOCKER_HUB_USERNAME%/farmconnect-${service}:${BUILD_NUMBER}
-                            docker push %DOCKER_HUB_USERNAME%/farmconnect-${service}:latest
+                            docker push %DOCKER_HUB_USERNAME%/farmconnect-frontend:${BUILD_NUMBER}
+                            docker push %DOCKER_HUB_USERNAME%/farmconnect-frontend:latest
                         """
+
+                        bat 'docker logout'
                     }
-
-                    // Push frontend
-                    bat """
-                        docker push %DOCKER_HUB_USERNAME%/farmconnect-frontend:${BUILD_NUMBER}
-                        docker push %DOCKER_HUB_USERNAME%/farmconnect-frontend:latest
-                    """
-
-                    // Logout to clean up
-                    bat 'docker logout'
                 }
-            }       
-    }
-}
-
+            }
+        }
 
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
-                bat 'docker-compose down || exit 0'
-                bat 'docker-compose up -d'
+                bat '''
+                    echo Stopping any existing containers...
+                    docker stop farmconnect-mysql || echo No running MySQL container found
+                    docker rm farmconnect-mysql || echo No old MySQL container found
+
+                    echo Cleaning up old containers...
+                    docker-compose down || exit 0
+
+                    echo Starting new containers...
+                    docker-compose up -d --remove-orphans
+                '''
             }
         }
 
@@ -149,7 +149,7 @@ pipeline {
             steps {
                 echo 'Performing health checks...'
                 script {
-                    sleep 30 // Wait for containers to start
+                    sleep 30
 
                     def services = [
                         'user-service': 8081,
