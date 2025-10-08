@@ -108,24 +108,34 @@ pipeline {
             steps {
                 echo 'Pushing images to Docker Hub...'
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                        def services = env.BACKEND_SERVICES.split(',')
-                        services.each { service ->
-                            bat """
-                                docker push ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER}
-                                docker push ${DOCKER_HUB_USERNAME}/farmconnect-${service}:latest
-                            """
-                        }
-
-                        // Push frontend
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_TOKEN')]) {
+                        // Log in securely using the access token
                         bat """
-                            docker push ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER}
-                            docker push ${DOCKER_HUB_USERNAME}/farmconnect-frontend:latest
+                            echo Logging in to Docker Hub...
+                            echo %DOCKER_HUB_TOKEN% | docker login -u %DOCKER_HUB_USERNAME% --password-stdin
+                        """
+
+                        def services = env.BACKEND_SERVICES.split(',')
+                    services.each { service ->
+                        bat """
+                            docker push %DOCKER_HUB_USERNAME%/farmconnect-${service}:${BUILD_NUMBER}
+                            docker push %DOCKER_HUB_USERNAME%/farmconnect-${service}:latest
                         """
                     }
+
+                    // Push frontend
+                    bat """
+                        docker push %DOCKER_HUB_USERNAME%/farmconnect-frontend:${BUILD_NUMBER}
+                        docker push %DOCKER_HUB_USERNAME%/farmconnect-frontend:latest
+                    """
+
+                    // Logout to clean up
+                    bat 'docker logout'
                 }
-            }
-        }
+            }       
+    }
+}
+
 
         stage('Deploy') {
             steps {
