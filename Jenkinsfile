@@ -1,18 +1,18 @@
 pipeline {
     agent any
-    
+
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKER_HUB_USERNAME = 'socprojects999' 
+        DOCKER_HUB_USERNAME = 'socprojects999'
         BACKEND_SERVICES = 'user-service,product-service,order-service,admin-service'
     }
-    
+
     tools {
         maven 'Maven-3.9'
         nodejs 'NodeJS-22'
         jdk 'JDK-17'
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
@@ -20,7 +20,7 @@ pipeline {
                 checkout scm
             }
         }
-        
+
         stage('Build Backend Services') {
             steps {
                 echo 'Building Spring Boot microservices...'
@@ -28,23 +28,34 @@ pipeline {
                     def services = env.BACKEND_SERVICES.split(',')
                     services.each { service ->
                         dir("farmconnect-backend/${service}") {
-                            sh 'mvn clean package -DskipTests'
+                            if (isUnix()) {
+                                sh 'mvn clean package -DskipTests'
+                            } else {
+                                bat 'mvn clean package -DskipTests'
+                            }
                         }
                     }
                 }
             }
         }
-        
+
         stage('Build Frontend') {
             steps {
                 echo 'Building React frontend...'
                 dir('farmconnect-frontend') {
-                    sh 'npm ci'
-                    sh 'npm run build'
+                    script {
+                        if (isUnix()) {
+                            sh 'npm ci'
+                            sh 'npm run build'
+                        } else {
+                            bat 'npm ci'
+                            bat 'npm run build'
+                        }
+                    }
                 }
             }
         }
-        
+
         stage('Run Tests') {
             parallel {
                 stage('Backend Tests') {
@@ -54,7 +65,11 @@ pipeline {
                             def services = env.BACKEND_SERVICES.split(',')
                             services.each { service ->
                                 dir("farmconnect-backend/${service}") {
-                                    sh 'mvn test || true'
+                                    if (isUnix()) {
+                                        sh 'mvn test || true'
+                                    } else {
+                                        bat 'mvn test'
+                                    }
                                 }
                             }
                         }
@@ -64,35 +79,58 @@ pipeline {
                     steps {
                         echo 'Running frontend tests...'
                         dir('farmconnect-frontend') {
-                            sh 'npm test -- --coverage --watchAll=false || true'
+                            script {
+                                if (isUnix()) {
+                                    sh 'npm test -- --coverage --watchAll=false || true'
+                                } else {
+                                    bat 'npm test -- --coverage --watchAll=false'
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        
+
         stage('Build Docker Images') {
             steps {
                 echo 'Building Docker images...'
                 script {
-                    // Build backend services
                     def services = env.BACKEND_SERVICES.split(',')
                     services.each { service ->
                         dir("farmconnect-backend/${service}") {
-                            sh "docker build -t ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER} ."
-                            sh "docker tag ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER} ${DOCKER_HUB_USERNAME}/farmconnect-${service}:latest"
+                            if (isUnix()) {
+                                sh """
+                                    docker build -t ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER} .
+                                    docker tag ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER} ${DOCKER_HUB_USERNAME}/farmconnect-${service}:latest
+                                """
+                            } else {
+                                bat """
+                                    docker build -t ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER} .
+                                    docker tag ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER} ${DOCKER_HUB_USERNAME}/farmconnect-${service}:latest
+                                """
+                            }
                         }
                     }
-                    
+
                     // Build frontend
                     dir('farmconnect-frontend') {
-                        sh "docker build -t ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER} ."
-                        sh "docker tag ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER} ${DOCKER_HUB_USERNAME}/farmconnect-frontend:latest"
+                        if (isUnix()) {
+                            sh """
+                                docker build -t ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER} .
+                                docker tag ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER} ${DOCKER_HUB_USERNAME}/farmconnect-frontend:latest
+                            """
+                        } else {
+                            bat """
+                                docker build -t ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER} .
+                                docker tag ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER} ${DOCKER_HUB_USERNAME}/farmconnect-frontend:latest
+                            """
+                        }
                     }
                 }
             }
         }
-        
+
         stage('Push to Docker Hub') {
             steps {
                 echo 'Pushing images to Docker Hub...'
@@ -100,32 +138,57 @@ pipeline {
                     docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
                         def services = env.BACKEND_SERVICES.split(',')
                         services.each { service ->
-                            sh "docker push ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER}"
-                            sh "docker push ${DOCKER_HUB_USERNAME}/farmconnect-${service}:latest"
+                            if (isUnix()) {
+                                sh """
+                                    docker push ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER}
+                                    docker push ${DOCKER_HUB_USERNAME}/farmconnect-${service}:latest
+                                """
+                            } else {
+                                bat """
+                                    docker push ${DOCKER_HUB_USERNAME}/farmconnect-${service}:${BUILD_NUMBER}
+                                    docker push ${DOCKER_HUB_USERNAME}/farmconnect-${service}:latest
+                                """
+                            }
                         }
-                        
+
                         // Push frontend
-                        sh "docker push ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER}"
-                        sh "docker push ${DOCKER_HUB_USERNAME}/farmconnect-frontend:latest"
+                        if (isUnix()) {
+                            sh """
+                                docker push ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER}
+                                docker push ${DOCKER_HUB_USERNAME}/farmconnect-frontend:latest
+                            """
+                        } else {
+                            bat """
+                                docker push ${DOCKER_HUB_USERNAME}/farmconnect-frontend:${BUILD_NUMBER}
+                                docker push ${DOCKER_HUB_USERNAME}/farmconnect-frontend:latest
+                            """
+                        }
                     }
                 }
             }
         }
-        
+
         stage('Deploy') {
             steps {
                 echo 'Deploying application...'
-                sh 'docker-compose down || true'
-                sh 'docker-compose up -d'
+                script {
+                    if (isUnix()) {
+                        sh 'docker-compose down || true'
+                        sh 'docker-compose up -d'
+                    } else {
+                        bat 'docker-compose down || exit 0'
+                        bat 'docker-compose up -d'
+                    }
+                }
             }
         }
-        
+
         stage('Health Check') {
             steps {
                 echo 'Performing health checks...'
                 script {
-                    sleep 30 // Wait for services to start
-                    
+                    sleep 30 // wait for services to start
+
                     def services = [
                         'user-service': 8081,
                         'product-service': 8082,
@@ -133,24 +196,21 @@ pipeline {
                         'admin-service': 8084,
                         'frontend': 80
                     ]
-                    
+
                     services.each { name, port ->
-                        def response = sh(
-                            script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:${port} || echo '000'",
-                            returnStdout: true
-                        ).trim()
-                        
-                        if (response == '200' || response == '302') {
-                            echo "${name} is healthy (HTTP ${response})"
+                        if (isUnix()) {
+                            def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:${port} || echo '000'", returnStdout: true).trim()
+                            echo "${name} -> HTTP ${response}"
                         } else {
-                            echo "WARNING: ${name} returned HTTP ${response}"
+                            def response = bat(script: "curl -s -o NUL -w %%{http_code} http://localhost:${port} || echo 000", returnStdout: true).trim()
+                            echo "${name} -> HTTP ${response}"
                         }
                     }
                 }
             }
         }
     }
-    
+
     post {
         success {
             echo 'Pipeline executed successfully!'
@@ -166,6 +226,7 @@ pipeline {
                 mimeType: 'text/html'
             )
         }
+
         failure {
             echo 'Pipeline failed!'
             emailext(
@@ -180,9 +241,16 @@ pipeline {
                 mimeType: 'text/html'
             )
         }
+
         always {
             echo 'Cleaning up...'
-            sh 'docker system prune -f'
+            script {
+                if (isUnix()) {
+                    sh 'docker system prune -f'
+                } else {
+                    bat 'docker system prune -f'
+                }
+            }
         }
     }
 }
