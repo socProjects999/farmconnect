@@ -1,6 +1,11 @@
-import axios from 'axios';
+import axios from "axios";
 
+<<<<<<< Updated upstream
 const API_URL = 'http://localhost:8083/api/orders';
+=======
+// Base API URL for Orders
+const API_URL = "http://localhost:8083/api/orders";
+>>>>>>> Stashed changes
 
 const orderService = {
   // Create order
@@ -14,6 +19,14 @@ const orderService = {
   // Get all orders
   getAllOrders: async (token) => {
     const response = await axios.get(API_URL, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  },
+
+  // ✅ NEW: Get orders by rider
+  getOrdersByRider: async (riderId, token) => {
+    const response = await axios.get(`${API_URL}/rider/${riderId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

@@ -1,6 +1,12 @@
-import axios from 'axios';
+import axios from "axios";
 
+<<<<<<< Updated upstream
 const API_URL = 'http://localhost:8081/api/auth';
+=======
+//const API_URL = '/api/auth';
+
+const API_URL = "http://localhost:8081/api/auth";
+>>>>>>> Stashed changes
 
 const authService = {
   // Sign up new user
@@ -8,8 +14,8 @@ const authService = {
     try {
       const response = await axios.post(`${API_URL}/signup`, userData);
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data));
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data));
       }
       return response.data;
     } catch (error) {
@@ -22,8 +28,8 @@ const authService = {
     try {
       const response = await axios.post(`${API_URL}/login`, credentials);
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data));
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data));
       }
       return response.data;
     } catch (error) {
@@ -33,19 +39,19 @@ const authService = {
 
   // Logout user
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
   },
 
   // Get current user
   getCurrentUser: () => {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem("user");
     return userStr ? JSON.parse(userStr) : null;
   },
 
   // Check if user is authenticated
   isAuthenticated: () => {
-    return !!localStorage.getItem('token');
+    return !!localStorage.getItem("token");
   },
 };
 

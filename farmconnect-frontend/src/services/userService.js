@@ -1,7 +1,13 @@
+<<<<<<< Updated upstream
 import axios from '../utils/axios';
 
 const API_URL = 'http://localhost:8081/api/users';
+=======
+import axios from "../utils/axios";
+>>>>>>> Stashed changes
 
+//const API_URL = '/api/users';
+const API_URL = "http://localhost:8081/api/users";
 const userService = {
   // Get user profile
   getUserProfile: async (userId) => {

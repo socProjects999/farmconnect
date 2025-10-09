@@ -1,6 +1,11 @@
-import axios from 'axios';
+import axios from "axios";
 
+<<<<<<< Updated upstream
 const API_URL = 'http://localhost:8083/api/deliveries';
+=======
+//const API_URL = '/api/deliveries';
+const API_URL = "http://localhost:8083/api/deliveries";
+>>>>>>> Stashed changes
 
 const deliveryService = {
   // Get delivery by order ID
@@ -35,7 +40,17 @@ const deliveryService = {
     return response.data;
   },
 
-  // Assign rider to delivery
+  // **Create a new delivery for an order**
+  createDelivery: async (orderId, riderId, token) => {
+    const response = await axios.post(
+      API_URL,
+      { orderId, riderId }, // send orderId and riderId in body
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  },
+
+  // Assign rider to existing delivery
   assignRider: async (deliveryId, riderId, token) => {
     const response = await axios.put(
       `${API_URL}/${deliveryId}/assign?riderId=${riderId}`,

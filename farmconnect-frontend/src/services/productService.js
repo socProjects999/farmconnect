@@ -1,7 +1,13 @@
+<<<<<<< Updated upstream
 import axios from 'axios';
 
 const API_URL = 'http://localhost:8082/api/products';
+=======
+import axios from "axios";
+>>>>>>> Stashed changes
 
+//const API_URL = '/api/products';
+const API_URL = "http://localhost:8082/api/products";
 const productService = {
   // Create new product
   createProduct: async (productData, token) => {

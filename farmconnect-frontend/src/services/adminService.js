@@ -1,6 +1,11 @@
-import axios from 'axios';
+import axios from "axios";
 
+<<<<<<< Updated upstream
 const API_URL = 'http://localhost:8084/api/admin';
+=======
+//const API_URL = '/api/admin';
+const API_URL = "http://localhost:8084/api/auth";
+>>>>>>> Stashed changes
 
 const adminService = {
   // Get dashboard statistics
