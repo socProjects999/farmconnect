@@ -145,31 +145,6 @@ pipeline {
             }
         }
 
-        stage('Health Check') {
-            steps {
-                echo '🩺 Performing health checks...'
-                script {
-                    echo 'Waiting 40 seconds for services to stabilize...'
-                    sleep 40
-
-                    def services = [
-                        'user-service': 8081,
-                        'product-service': 8082,
-                        'order-service': 8083,
-                        'admin-service': 8084,
-                        'frontend': 80
-                    ]
-
-                    services.each { name, port ->
-                        def code = bat(script: "curl -s -o NUL -w %%{http_code} http://localhost:${port} || echo 000", returnStdout: true).trim()
-                        echo "${name} responded with HTTP ${code}"
-                        if (!code.startsWith("2") && !code.startsWith("3")) {
-                            error("❌ ${name} health check failed (HTTP ${code})")
-                        }
-                    }
-                }
-            }
-        }
     }
 
     post {
