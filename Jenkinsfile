@@ -133,8 +133,8 @@ pipeline {
                 echo '📦 Deploying application...'
                 bat '''
                     echo Stopping and cleaning existing containers...
-                    docker stop farmconnect-mysql farmconnect-user-service farmconnect-product-service farmconnect-order-service farmconnect-admin-service || echo "No running containers"
-                    docker rm -f farmconnect-mysql farmconnect-user-service farmconnect-product-service farmconnect-order-service farmconnect-admin-service || echo "No old containers"
+                    docker stop farmconnect-mysql farmconnect-user-service farmconnect-product-service farmconnect-order-service farmconnect-admin-service farmconnect-frontend || echo "No running containers"
+                    docker rm -f farmconnect-mysql farmconnect-user-service farmconnect-product-service farmconnect-order-service farmconnect-admin-service farmconnect-frontend || echo "No old containers"
 
                     echo Cleaning up docker-compose environment...
                     docker-compose down || exit 0
