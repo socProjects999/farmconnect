@@ -18,14 +18,14 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo 'Checking out code from GitHub...'
+                echo '🔄 Checking out code from GitHub...'
                 checkout scm
             }
         }
 
         stage('Build Backend Services') {
             steps {
-                echo 'Building Spring Boot microservices...'
+                echo '⚙️ Building Spring Boot microservices...'
                 script {
                     def services = env.BACKEND_SERVICES.split(',')
                     services.each { service ->
@@ -39,7 +39,7 @@ pipeline {
 
         stage('Build Frontend') {
             steps {
-                echo 'Building React frontend...'
+                echo '⚛️ Building React frontend...'
                 dir('farmconnect-frontend') {
                     bat 'npm ci'
                     bat 'npm run build'
@@ -51,7 +51,7 @@ pipeline {
             parallel {
                 stage('Backend Tests') {
                     steps {
-                        echo 'Running backend tests...'
+                        echo '🧪 Running backend tests...'
                         script {
                             def services = env.BACKEND_SERVICES.split(',')
                             services.each { service ->
@@ -64,7 +64,7 @@ pipeline {
                 }
                 stage('Frontend Tests') {
                     steps {
-                        echo 'Running frontend tests...'
+                        echo '🧪 Running frontend tests...'
                         dir('farmconnect-frontend') {
                             bat 'npm test -- --coverage --watchAll=false || exit 0'
                         }
@@ -75,7 +75,7 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                echo 'Building Docker images...'
+                echo '🐳 Building Docker images...'
                 script {
                     dir('farmconnect-backend') {
                         bat "docker build -f user-service/Dockerfile -t ${DOCKER_USER}/farmconnect-user-service:${BUILD_NUMBER} ."
@@ -101,7 +101,7 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                echo 'Pushing images to Docker Hub...'
+                echo '🚀 Pushing images to Docker Hub...'
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_TOKEN')]) {
                         bat """
@@ -130,16 +130,16 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo 'Deploying application...'
+                echo '📦 Deploying application...'
                 bat '''
-                    echo Stopping any existing containers...
-                    docker stop farmconnect-mysql || echo No running MySQL container found
-                    docker rm farmconnect-mysql || echo No old MySQL container found
+                    echo Stopping and cleaning existing containers...
+                    docker stop farmconnect-mysql farmconnect-user-service farmconnect-product-service farmconnect-order-service farmconnect-admin-service || echo "No running containers"
+                    docker rm -f farmconnect-mysql farmconnect-user-service farmconnect-product-service farmconnect-order-service farmconnect-admin-service || echo "No old containers"
 
-                    echo Cleaning up old containers...
+                    echo Cleaning up docker-compose environment...
                     docker-compose down || exit 0
 
-                    echo Starting new containers...
+                    echo Starting fresh containers...
                     docker-compose up -d --remove-orphans
                 '''
             }
@@ -147,9 +147,10 @@ pipeline {
 
         stage('Health Check') {
             steps {
-                echo 'Performing health checks...'
+                echo '🩺 Performing health checks...'
                 script {
-                    sleep 30
+                    echo 'Waiting 40 seconds for services to stabilize...'
+                    sleep 40
 
                     def services = [
                         'user-service': 8081,
@@ -160,8 +161,11 @@ pipeline {
                     ]
 
                     services.each { name, port ->
-                        def response = bat(script: "curl -s -o NUL -w %%{http_code} http://localhost:${port} || echo 000", returnStdout: true).trim()
-                        echo "${name} -> HTTP ${response}"
+                        def code = bat(script: "curl -s -o NUL -w %%{http_code} http://localhost:${port} || echo 000", returnStdout: true).trim()
+                        echo "${name} responded with HTTP ${code}"
+                        if (!code.startsWith("2") && !code.startsWith("3")) {
+                            error("❌ ${name} health check failed (HTTP ${code})")
+                        }
                     }
                 }
             }
@@ -170,14 +174,14 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline executed successfully!'
+            echo '✅ Pipeline executed successfully!'
             emailext(
                 subject: "✅ Jenkins Build Success: ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
                 body: """
-                    <h2>Build Successful!</h2>
+                    <h2>Build Successful 🎉</h2>
                     <p>Job: ${env.JOB_NAME}</p>
                     <p>Build Number: ${env.BUILD_NUMBER}</p>
-                    <p>Check console output at: ${env.BUILD_URL}</p>
+                    <p><a href="${env.BUILD_URL}">View Console Output</a></p>
                 """,
                 to: 'admin@farmconnect.com',
                 mimeType: 'text/html'
@@ -185,14 +189,14 @@ pipeline {
         }
 
         failure {
-            echo 'Pipeline failed!'
+            echo '❌ Pipeline failed!'
             emailext(
                 subject: "❌ Jenkins Build Failed: ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
                 body: """
-                    <h2>Build Failed!</h2>
+                    <h2>Build Failed 🚨</h2>
                     <p>Job: ${env.JOB_NAME}</p>
                     <p>Build Number: ${env.BUILD_NUMBER}</p>
-                    <p>Check console output at: ${env.BUILD_URL}</p>
+                    <p><a href="${env.BUILD_URL}">View Console Output</a></p>
                 """,
                 to: 'admin@farmconnect.com',
                 mimeType: 'text/html'
@@ -200,7 +204,7 @@ pipeline {
         }
 
         always {
-            echo 'Cleaning up...'
+            echo '🧹 Cleaning up Docker system...'
             bat 'docker system prune -f'
         }
     }
